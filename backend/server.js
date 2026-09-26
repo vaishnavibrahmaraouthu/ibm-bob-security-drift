@@ -3,7 +3,8 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const connectDB = require("./config/db");
 
-const authRoutes = require("./routes/authRoutes");
+const authRoutes     = require("./routes/authRoutes");
+const analysisRoutes = require("./routes/analysisRoutes");
 
 dotenv.config({ path: __dirname + "/.env" });
 
@@ -21,7 +22,8 @@ app.get("/health", (req, res) => {
   });
 });
 
-app.use("/api/auth", authRoutes);
+app.use("/api/auth",     authRoutes);
+app.use("/api/analysis", analysisRoutes);
 
 const PORT = process.env.PORT || 5000;
 
