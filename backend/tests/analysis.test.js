@@ -493,10 +493,12 @@ describe("analyzeRepository — demo repository (T-1)", () => {
     expect(sourceD1.category).toBe(CATEGORY.INTENTIONAL_DESIGN);
   });
 
-  test("T-3 — D-2 (token in response) produces a finding", () => {
+  test("T-3 — D-2 (token in response) produces no finding after F-2 remediation", () => {
+    // F-2 was remediated: resetToken is no longer returned in the HTTP response.
+    // The D-2 detector should find zero matches against the demo repo.
     const result  = analyzeRepository(DEMO_REPO);
     const d2Findings = result.findings.filter((f) => f.detectorId === "D-2");
-    expect(d2Findings.length).toBeGreaterThanOrEqual(1);
+    expect(d2Findings).toHaveLength(0);
   });
 
   test("T-3 — D-3 (account enumeration) produces a finding", () => {

@@ -1,6 +1,7 @@
-const request = require("supertest");
+const request  = require("supertest");
 const mongoose = require("mongoose");
-const app = require("../server");
+const app  = require("../server");
+const User = require("../models/user");
 
 describe("Password Reset Flow", () => {
   const testEmail = `reset-${Date.now()}@example.com`;
@@ -26,6 +27,8 @@ describe("Password Reset Flow", () => {
     expect(registerResponse.statusCode).toBe(201);
 
     // 2. Request password reset
+    // F-2 remediated: the token is no longer returned in the HTTP response.
+    // The endpoint now returns only a generic confirmation message.
     const forgotResponse = await request(app)
       .post("/api/auth/forgot-password")
       .send({
@@ -33,11 +36,19 @@ describe("Password Reset Flow", () => {
       });
 
     expect(forgotResponse.statusCode).toBe(200);
-    expect(forgotResponse.body.resetToken).toBeDefined();
+    expect(forgotResponse.body.message).toBe(
+      "If that email is registered, a password reset token has been sent"
+    );
+    // Token must NOT be present in the HTTP response body.
+    expect(forgotResponse.body.resetToken).toBeUndefined();
 
-    const resetToken = forgotResponse.body.resetToken;
+    // Retrieve the token from the database — the server-side store where it
+    // now lives exclusively (simulating what an email delivery step would read).
+    const userRecord = await User.findOne({ email: testEmail });
+    expect(userRecord.resetToken).toBeDefined();
+    const resetToken = userRecord.resetToken;
 
-    // 3. Reset password
+    // 3. Reset password using the server-side token
     const resetResponse = await request(app)
       .post("/api/auth/reset-password")
       .send({

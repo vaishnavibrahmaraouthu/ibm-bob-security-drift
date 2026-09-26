@@ -135,12 +135,14 @@ describe("POST /api/analysis", () => {
   });
 
   test("findings include the expected detector IDs for the demo repo", async () => {
+    // D-2 (token in response) was remediated (F-2 fix) — it no longer fires.
+    // D-3 (account enumeration) and D-4 (plaintext token store) remain open.
     const res = await request(app)
       .post("/api/analysis")
       .send({ repositoryPath: DEMO_REPO });
 
     const ids = res.body.findings.map((f) => f.detectorId);
-    expect(ids).toContain("D-2");
+    expect(ids).not.toContain("D-2");
     expect(ids).toContain("D-3");
     expect(ids).toContain("D-4");
   });

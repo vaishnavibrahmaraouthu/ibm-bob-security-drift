@@ -142,9 +142,13 @@ router.post("/forgot-password", async (req, res) => {
 
     await user.save();
 
+    // F-2: Do not return the reset token in the HTTP response.
+    // In production this would be delivered via email.
+    // The token remains stored on the user record for the reset-password flow.
+    console.log(`[PASSWORD RESET] Token for ${email}: ${resetToken}`);
+
     res.json({
-      message: "Password reset token generated",
-      resetToken
+      message: "If that email is registered, a password reset token has been sent"
     });
 
   } catch (error) {
