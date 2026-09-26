@@ -1,6 +1,69 @@
 import { useState } from "react";
 import StatusBadge from "./StatusBadge";
 
+function plainEnglishProblem(finding) {
+  if (finding.problem || finding.summary) {
+    return finding.problem || finding.summary;
+  }
+
+  const title = (finding.title || "").toLowerCase();
+  if (title.includes("account enumeration")) {
+    return "The password-reset response could reveal whether an email address has an account.";
+  }
+  if (title.includes("exposed") && title.includes("token")) {
+    return "A password-reset token may be visible in an API response.";
+  }
+  if (title.includes("plaintext") || title.includes("token stored")) {
+    return "A password-reset token is stored without the protection used for other credentials.";
+  }
+  if (title.includes("token generation") || title.includes("random")) {
+    return "The password-reset token may be generated in a way that is easier to guess.";
+  }
+
+  return finding.classificationReason || finding.driftReason || finding.detectedImplementation || finding.title || "A security practice differs from the established repository pattern.";
+}
+
+function conciseText(value, maxLength = 260) {
+  const text = typeof value === "string" ? value.replace(/\s+/g, " ").trim() : "";
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength).replace(/\s+\S*$/, "").trim()}...`;
+}
+
+function buildRemediationBrief(finding, location) {
+  const repositoryPattern = finding.repositoryPattern || finding.patternViolated;
+  const quotedPattern = repositoryPattern?.match(/["“]([^"”]+)["”]/)?.[1];
+  const pattern = conciseText(quotedPattern || repositoryPattern) ||
+    "Follow the security pattern already established in this project.";
+  const constraints = finding.constraints || finding.remediationConstraints;
+  const constraintList = Array.isArray(constraints) && constraints.length > 0
+    ? constraints
+    : [
+        "Preserve the existing flow",
+        "Do not modify unrelated findings",
+        "Update and run relevant tests",
+      ];
+
+  return [
+    "Security Drift Remediation",
+    "",
+    `Finding: ${finding.title || "Security finding"}`,
+    `Severity: ${finding.severity || "Not specified"}`,
+    `File: ${location || finding.file || "Not specified"}`,
+    "",
+    "Problem:",
+    conciseText(plainEnglishProblem(finding)),
+    "",
+    "Repository pattern:",
+    pattern,
+    "",
+    "Requested action:",
+    conciseText(finding.remediation) || "Make the smallest targeted change that aligns this finding with the established repository pattern.",
+    "",
+    "Constraints:",
+    ...constraintList.map((constraint) => `- ${constraint}`),
+  ].join("\n");
+}
+
 // FindingCard — collapsible card showing the full investigation flow for a
 // single drift finding.
 //
@@ -11,6 +74,8 @@ import StatusBadge from "./StatusBadge";
 // Expanded body: Pattern → Detection → Why it's drift → Evidence → Remediation
 export default function FindingCard({ finding }) {
   const [expanded, setExpanded] = useState(false);
+  const [briefOpen, setBriefOpen] = useState(false);
+  const [copyMessage, setCopyMessage] = useState("");
 
   // ── Normalise fields that differ between API and static shapes ────────────
 
@@ -27,6 +92,16 @@ export default function FindingCard({ finding }) {
   // Before/after panels — both shapes carry { label, code, impact/property }
   const hasBefore = finding.before && (finding.before.label || finding.before.code);
   const hasAfter  = finding.after  && (finding.after.label  || finding.after.code);
+  const remediationBrief = buildRemediationBrief(finding, location);
+
+  async function handleCopyBrief() {
+    try {
+      await navigator.clipboard.writeText(remediationBrief);
+      setCopyMessage("Brief copied.");
+    } catch {
+      setCopyMessage("Copy unavailable. Select and copy the brief above.");
+    }
+  }
 
   return (
     <div className={`finding-card${expanded ? " finding-card--open" : ""}`}>
@@ -151,6 +226,66 @@ export default function FindingCard({ finding }) {
               <span className="inv-step" aria-hidden="true">E</span>
               Remediation &amp; verification
             </div>
+            <button
+              type="button"
+              onClick={() => {
+                setCopyMessage("");
+                setBriefOpen(true);
+              }}
+              style={{
+                margin: "0 0 12px",
+                padding: "8px 12px",
+                color: "var(--sd-text)",
+                background: "var(--sd-surface-2)",
+                border: "1px solid var(--sd-border-2)",
+                borderRadius: "var(--sd-radius-sm)",
+                fontSize: "13px",
+                fontWeight: 600,
+              }}
+            >
+              Remediate with IBM Bob
+            </button>
+            {briefOpen && (
+              <div
+                role="dialog"
+                aria-labelledby={`ibm-bob-brief-title-${finding.id}`}
+                style={{
+                  marginBottom: "14px",
+                  padding: "16px",
+                  background: "var(--sd-surface)",
+                  border: "1px solid var(--sd-border-2)",
+                  borderRadius: "var(--sd-radius-sm)",
+                }}
+              >
+                <h3
+                  id={`ibm-bob-brief-title-${finding.id}`}
+                  style={{ margin: "0 0 10px", color: "var(--sd-text)", fontSize: "15px" }}
+                >
+                  IBM Bob Remediation Brief
+                </h3>
+                <pre
+                  style={{
+                    margin: 0,
+                    color: "var(--sd-text-dim)",
+                    fontFamily: "var(--sd-mono)",
+                    fontSize: "12px",
+                    lineHeight: 1.6,
+                    whiteSpace: "pre-wrap",
+                    overflowWrap: "anywhere",
+                    userSelect: "text",
+                  }}
+                >
+                  {remediationBrief}
+                </pre>
+                <p role="status" style={{ minHeight: "18px", margin: "8px 0", color: "var(--sd-text-muted)", fontSize: "12px" }}>
+                  {copyMessage || "Copy this brief into IBM Bob. No files are changed and Bob is not called."}
+                </p>
+                <div style={{ display: "flex", gap: "8px" }}>
+                  <button type="button" onClick={handleCopyBrief}>Copy Brief</button>
+                  <button type="button" onClick={() => setBriefOpen(false)}>Close</button>
+                </div>
+              </div>
+            )}
             <div className="inv-verify-row">
               <span className="inv-verify-icon" aria-hidden="true">
                 {finding.status === "FIXED" ? "✓" : "○"}
