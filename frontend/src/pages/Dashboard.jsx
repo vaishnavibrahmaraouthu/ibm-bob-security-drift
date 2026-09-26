@@ -1,26 +1,35 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import StatusBadge from "../components/StatusBadge";
 import FindingCard from "../components/FindingCard";
 import {
   REPO,
   BASELINE,
   FINDINGS,
+  EXCLUDED_FINDINGS,
   VERIFICATION,
+  ANALYSIS_TIMELINE,
   WORKFLOW_STEPS,
 } from "../data/findings";
 
-// ── Analyse simulation ───────────────────────────────────────────────────────
-// Three phases the button cycles through.
-const ANALYSIS_PHASES = [
-  "Reading SECURITY_PATTERNS.md…",
-  "Scanning authentication routes…",
-  "Comparing password-reset flow against baseline…",
-  "Validating token generation and storage…",
-  "Checking error-message patterns…",
-  "Compiling findings…",
-  "Analysis complete",
+// ── Analysis simulation steps ─────────────────────────────────────────────
+// Each step maps to a phase of the Detect → Validate → Remediate → Verify flow.
+const ANALYSIS_STEPS = [
+  { phase: "detect",    text: "Reading SECURITY_PATTERNS.md baseline…" },
+  { phase: "detect",    text: "Scanning authentication routes…" },
+  { phase: "detect",    text: "Scanning password-reset flow…" },
+  { phase: "validate",  text: "Comparing implementations against baseline patterns…" },
+  { phase: "validate",  text: "Classifying deviations: drift vs gap vs intentional…" },
+  { phase: "remediate", text: "Reviewing applied fixes…" },
+  { phase: "verify",    text: "Checking baseline rule compliance…" },
+  { phase: "verify",    text: "Verifying test suite results…" },
 ];
+
+const PHASE_LABEL = {
+  detect:    "Detect",
+  validate:  "Validate",
+  remediate: "Remediate",
+  verify:    "Verify",
+};
 
 export default function Dashboard() {
   const navigate = useNavigate();
@@ -34,26 +43,26 @@ export default function Dashboard() {
 
   // Analysis simulation state.
   const [analysing, setAnalysing] = useState(false);
-  const [phaseIndex, setPhaseIndex] = useState(-1);
+  const [stepIndex, setStepIndex] = useState(-1);
   const [done, setDone] = useState(false);
 
   function handleAnalyse() {
     if (analysing) return;
     setDone(false);
     setAnalysing(true);
-    setPhaseIndex(0);
+    setStepIndex(0);
   }
 
   useEffect(() => {
     if (!analysing) return;
-    if (phaseIndex >= ANALYSIS_PHASES.length - 1) {
+    if (stepIndex >= ANALYSIS_STEPS.length - 1) {
       setAnalysing(false);
       setDone(true);
       return;
     }
-    const t = setTimeout(() => setPhaseIndex((i) => i + 1), 520);
+    const t = setTimeout(() => setStepIndex((i) => i + 1), 480);
     return () => clearTimeout(t);
-  }, [analysing, phaseIndex]);
+  }, [analysing, stepIndex]);
 
   function handleLogout() {
     localStorage.removeItem("token");
@@ -62,10 +71,17 @@ export default function Dashboard() {
 
   const pct = Math.round((BASELINE.satisfiedRules / BASELINE.totalRules) * 100);
 
+  // Track which phase labels have appeared
+  const visibleSteps = analysing
+    ? ANALYSIS_STEPS.slice(0, stepIndex + 1)
+    : done
+    ? ANALYSIS_STEPS
+    : [];
+
   return (
     <div className="sd-page">
 
-      {/* ── Top navigation ──────────────────────────────────────────── */}
+      {/* ── Navigation ───────────────────────────────────────────────── */}
       <header className="sd-nav">
         <div className="sd-nav-inner">
           <div className="sd-nav-brand">
@@ -81,21 +97,21 @@ export default function Dashboard() {
 
       <main className="sd-main">
 
-        {/* ── Page heading ──────────────────────────────────────────── */}
+        {/* ── Hero ─────────────────────────────────────────────────────── */}
         <section className="sd-hero">
           <p className="sd-hero-eyebrow">Developer Security</p>
           <h1 className="sd-hero-title">Security Drift</h1>
           <p className="sd-hero-sub">
-            Security is often checked after code ships.&nbsp;
-            <strong>Security Drift</strong> brings it into your development workflow —
-            comparing every change against your repository's established security baseline
-            and surfacing deviations before they become vulnerabilities.
+            Security is often checked after code ships.{" "}
+            <strong>Security Drift</strong> brings it into the development workflow —
+            comparing new code against the security patterns already established in your
+            repository, and surfacing deviations before they become vulnerabilities.
           </p>
         </section>
 
-        {/* ── Repository status card ────────────────────────────────── */}
+        {/* ── Repository status ─────────────────────────────────────── */}
         <section className="sd-section">
-          <h2 className="sd-section-title">Repository Status</h2>
+          <h2 className="sd-section-title">Repository</h2>
           <div className="sd-repo-card">
             <div className="sd-repo-grid">
               <div className="sd-repo-field">
@@ -113,60 +129,140 @@ export default function Dashboard() {
               <div className="sd-repo-field">
                 <span className="sd-field-label">Status</span>
                 <span className="sd-field-value">
-                  <StatusBadge type="status" value="FIXED" />
-                  <span className="sd-status-detail">Analysis complete · All drift remediated</span>
+                  <span className="sd-aligned-badge">ALIGNED</span>
+                  <span className="sd-status-detail">All confirmed drift remediated</span>
                 </span>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── Analyse button ────────────────────────────────────────── */}
-        <section className="sd-section sd-analyse-section">
-          <button
-            className={`sd-analyse-btn${analysing ? " sd-analyse-btn--busy" : ""}`}
-            onClick={handleAnalyse}
-            disabled={analysing}
-          >
-            {analysing ? "Analysing…" : "Analyze Repository"}
-          </button>
-
-          {(analysing || done) && (
-            <div className="sd-progress">
-              {ANALYSIS_PHASES.slice(0, analysing ? phaseIndex + 1 : ANALYSIS_PHASES.length).map(
-                (phase, i) => (
-                  <div
-                    key={i}
-                    className={`sd-progress-line${
-                      i === phaseIndex && analysing ? " sd-progress-line--active" : ""
-                    }${i < (analysing ? phaseIndex : ANALYSIS_PHASES.length) ? " sd-progress-line--done" : ""}`}
-                  >
-                    <span className="sd-progress-icon" aria-hidden="true">
-                      {i === phaseIndex && analysing ? "◌" : "✓"}
-                    </span>
-                    {phase}
-                  </div>
-                )
-              )}
-              {done && (
-                <p className="sd-progress-result">
-                  Repository aligned with baseline. 0 confirmed drift findings remaining.
-                </p>
-              )}
-            </div>
-          )}
-
-          <p className="sd-analyse-note">
-            This simulation reflects the completed Phase 1 analysis of this repository.
-            Live analysis connects to your backend when available.
+        {/* ── Analysis timeline strip ───────────────────────────────── */}
+        <section className="sd-section">
+          <h2 className="sd-section-title">Latest Verified Analysis</h2>
+          <p className="sd-section-sub">
+            Completed analysis of this repository across the full Detect → Validate → Remediate → Verify workflow.
           </p>
+          <div className="sd-timeline">
+            {ANALYSIS_TIMELINE.map((stage, i) => (
+              <div key={stage.stage} className="sd-tl-item">
+                <div className="sd-tl-connector-wrap">
+                  <div className="sd-tl-dot" />
+                  {i < ANALYSIS_TIMELINE.length - 1 && (
+                    <div className="sd-tl-line" aria-hidden="true" />
+                  )}
+                </div>
+                <div className="sd-tl-content">
+                  <span className="sd-tl-stage">{stage.label}</span>
+                  <span className={`sd-tl-value${stage.value === 0 ? " sd-tl-value--zero" : ""}`}>
+                    {stage.value}
+                  </span>
+                  <span className="sd-tl-unit">{stage.unit}</span>
+                  <span className="sd-tl-detail">{stage.detail}</span>
+                </div>
+              </div>
+            ))}
+          </div>
         </section>
 
-        {/* ── Baseline compliance ───────────────────────────────────── */}
+        {/* ── Analyze Repository ────────────────────────────────────── */}
+        <section className="sd-section">
+          <h2 className="sd-section-title">Analyze Repository</h2>
+          <p className="sd-section-sub">
+            Runs the full Security Drift workflow: detect potential deviations, validate against
+            the repository baseline, confirm drift, and verify current state.
+          </p>
+
+          <div className="sd-analyse-card">
+            <div className="sd-analyse-top">
+              <button
+                className={`sd-analyse-btn${analysing ? " sd-analyse-btn--busy" : ""}`}
+                onClick={handleAnalyse}
+                disabled={analysing}
+              >
+                {analysing ? "Analysing…" : "Analyze Repository"}
+              </button>
+              <span className="sd-demo-badge">DEMO</span>
+            </div>
+
+            {/* Progress output */}
+            {(analysing || done) && (
+              <div className="sd-progress">
+                <div className="sd-progress-phases">
+                  {(["detect","validate","remediate","verify"]).map((phase) => {
+                    const steps = visibleSteps.filter((s) => s.phase === phase);
+                    if (steps.length === 0) return null;
+                    const isCurrentPhase =
+                      analysing &&
+                      visibleSteps[visibleSteps.length - 1]?.phase === phase;
+                    return (
+                      <div key={phase} className="sd-progress-phase-block">
+                        <div className={`sd-progress-phase-label${isCurrentPhase ? " sd-progress-phase-label--active" : ""}`}>
+                          {PHASE_LABEL[phase]}
+                        </div>
+                        {steps.map((s, i) => {
+                          const isActive =
+                            analysing &&
+                            visibleSteps[visibleSteps.length - 1] === s;
+                          return (
+                            <div
+                              key={i}
+                              className={`sd-progress-line${isActive ? " sd-progress-line--active" : " sd-progress-line--done"}`}
+                            >
+                              <span className="sd-progress-icon" aria-hidden="true">
+                                {isActive ? "◌" : "✓"}
+                              </span>
+                              {s.text}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })}
+                </div>
+
+                {done && (
+                  <div className="sd-progress-result-block">
+                    <div className="sd-progress-result-title">Analysis complete</div>
+                    <div className="sd-progress-results">
+                      <span className="sd-pr-item">
+                        <span className="sd-pr-num">7</span>
+                        <span className="sd-pr-label">potential deviations considered</span>
+                      </span>
+                      <span className="sd-pr-divider" aria-hidden="true" />
+                      <span className="sd-pr-item">
+                        <span className="sd-pr-num sd-pr-num--alert">4</span>
+                        <span className="sd-pr-label">confirmed security drifts</span>
+                      </span>
+                      <span className="sd-pr-divider" aria-hidden="true" />
+                      <span className="sd-pr-item">
+                        <span className="sd-pr-num sd-pr-num--muted">3</span>
+                        <span className="sd-pr-label">excluded from drift classification</span>
+                      </span>
+                      <span className="sd-pr-divider" aria-hidden="true" />
+                      <span className="sd-pr-item">
+                        <span className="sd-pr-num sd-pr-num--zero">0</span>
+                        <span className="sd-pr-label">confirmed drift remaining</span>
+                      </span>
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            <p className="sd-analyse-note">
+              Demo analysis based on the verified Phase 1 repository analysis.
+              Live repository analysis is planned for the next phase.
+            </p>
+          </div>
+        </section>
+
+        {/* ── Security baseline ─────────────────────────────────────── */}
         <section className="sd-section">
           <h2 className="sd-section-title">Security Baseline</h2>
           <p className="sd-section-sub">
-            Sourced from <code className="sd-inline-code">{BASELINE.file}</code> · Current verified state
+            Sourced from <code className="sd-inline-code">{BASELINE.file}</code>{" "}
+            · Current verified state after remediation
           </p>
 
           <div className="sd-baseline-card">
@@ -212,11 +308,11 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* ── Drift findings ────────────────────────────────────────── */}
+        {/* ── Confirmed drift findings ──────────────────────────────── */}
         <section className="sd-section">
-          <h2 className="sd-section-title">Drift Findings</h2>
+          <h2 className="sd-section-title">Confirmed Drift Findings</h2>
           <p className="sd-section-sub">
-            4 confirmed findings identified · 4 remediated · 0 remaining
+            {VERIFICATION.confirmedFindings} confirmed · {VERIFICATION.remediatedFindings} remediated · {VERIFICATION.remainingDrift} remaining
           </p>
 
           <div className="sd-findings-list">
@@ -224,15 +320,29 @@ export default function Dashboard() {
               <FindingCard key={f.id} finding={f} />
             ))}
           </div>
+        </section>
 
-          <div className="sd-out-of-scope">
-            <span className="sd-oos-label">Out of scope</span>
-            {VERIFICATION.outOfScopeFindings.map((f) => (
-              <span key={f.id} className="sd-oos-item">
-                <StatusBadge type="status" value="OUT OF SCOPE" />
-                <span className="sd-oos-id">{f.id}</span>
-                <span className="sd-oos-reason">{f.reason}</span>
-              </span>
+        {/* ── Not classified as drift ───────────────────────────────── */}
+        <section className="sd-section">
+          <h2 className="sd-section-title">Not Classified as Security Drift</h2>
+          <p className="sd-section-sub">
+            These findings were considered but excluded from drift classification.
+            Security Drift only flags deviations from patterns already established in
+            the repository — not general security gaps or intentional design choices.
+          </p>
+
+          <div className="sd-excluded-list">
+            {EXCLUDED_FINDINGS.map((f) => (
+              <div key={f.id} className="sd-excluded-card">
+                <div className="sd-excluded-header">
+                  <span className="sd-excluded-id">{f.id}</span>
+                  <span className={`sd-excluded-category sd-excluded-category--${f.categoryStyle}`}>
+                    {f.category}
+                  </span>
+                  <span className="sd-excluded-title">{f.title}</span>
+                </div>
+                <p className="sd-excluded-explanation">{f.explanation}</p>
+              </div>
             ))}
           </div>
         </section>
@@ -270,10 +380,9 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* ── How it works ──────────────────────────────────────────── */}
+        {/* ── How Security Drift works ──────────────────────────────── */}
         <section className="sd-section">
           <h2 className="sd-section-title">How Security Drift Works</h2>
-
           <div className="sd-workflow">
             {WORKFLOW_STEPS.map((s, i) => (
               <div key={s.step} className="sd-workflow-item">
@@ -295,7 +404,7 @@ export default function Dashboard() {
       </main>
 
       <footer className="sd-footer">
-        <p>Security Drift · Phase 1 analysis complete · Repository aligned with baseline</p>
+        <p>Security Drift · Phase 1 complete · Repository aligned with baseline · 20/20 rules satisfied</p>
       </footer>
     </div>
   );

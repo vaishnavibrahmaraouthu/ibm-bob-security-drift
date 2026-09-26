@@ -29,44 +29,75 @@ function Register() {
   };
 
   return (
-    <div>
-      <h2>Register</h2>
+    <div className="sd-page sd-auth-page">
+      <div className="sd-auth-card">
 
-      <form onSubmit={handleRegister}>
-        <input
-          type="text"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
+        {/* Brand */}
+        <div className="sd-auth-brand">
+          <span className="sd-nav-logo" aria-hidden="true">⬡</span>
+          <span className="sd-nav-name">Security Drift</span>
+        </div>
 
-        <br />
-        <br />
+        <h1 className="sd-auth-title">Create your account</h1>
+        <p className="sd-auth-sub">
+          Get started with Security Drift to detect and remediate security
+          pattern deviations in your repositories.
+        </p>
 
-        <input
-          type="email"
-          placeholder="Email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-        />
+        <form className="sd-auth-form" onSubmit={handleRegister}>
+          <div className="sd-field">
+            <label className="sd-label" htmlFor="reg-username">Username</label>
+            <input
+              id="reg-username"
+              className="sd-input"
+              type="text"
+              placeholder="your-username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              autoComplete="username"
+              required
+            />
+          </div>
 
-        <br />
-        <br />
+          <div className="sd-field">
+            <label className="sd-label" htmlFor="reg-email">Email</label>
+            <input
+              id="reg-email"
+              className="sd-input"
+              type="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              autoComplete="email"
+              required
+            />
+          </div>
 
-        <input
-          type="password"
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
+          <div className="sd-field">
+            <label className="sd-label" htmlFor="reg-password">Password</label>
+            <input
+              id="reg-password"
+              className="sd-input"
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              autoComplete="new-password"
+              required
+            />
+          </div>
 
-        <br />
-        <br />
+          <button type="submit" className="sd-btn-primary sd-btn-full">
+            Create account
+          </button>
+        </form>
 
-        <button type="submit">
-          Register
-        </button>
-      </form>
+        <p className="sd-auth-footer-link">
+          Already have an account?{" "}
+          <a href="/" className="sd-link">Sign in</a>
+        </p>
+
+      </div>
     </div>
   );
 }

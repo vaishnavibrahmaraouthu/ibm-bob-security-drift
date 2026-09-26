@@ -787,3 +787,713 @@ button {
   font-size: 12px;
   color: var(--sd-text-muted);
 }
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECURITY DRIFT — Phase 2 additions
+   Analysis timeline, improved Analyse section, excluded findings, FindingCard
+   investigation flow, updated progress layout.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── finding-card open state border accent ───────────────────────────────── */
+
+.finding-card--open {
+  border-color: var(--sd-border-2);
+}
+
+/* ── Investigation flow sections inside FindingCard ─────────────────────── */
+
+.inv-section {
+  padding: 12px 14px;
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  background: var(--sd-surface-2);
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.inv-section--drift {
+  border-color: rgba(59, 130, 246, 0.3);
+  background: rgba(59, 130, 246, 0.05);
+}
+
+.inv-section--verified {
+  border-color: var(--sd-green-border);
+  background: var(--sd-green-bg);
+}
+
+.inv-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.inv-label--pattern  { color: var(--sd-text-muted); }
+.inv-label--detected { color: var(--sd-orange); }
+.inv-label--drift    { color: var(--sd-accent); }
+.inv-label--evidence { color: var(--sd-text-muted); }
+.inv-label--verified { color: var(--sd-green); }
+
+.inv-step {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border-2);
+  font-size: 10px;
+  font-weight: 800;
+  color: var(--sd-text-dim);
+  flex-shrink: 0;
+}
+
+.inv-text {
+  font-size: 13px;
+  color: var(--sd-text-dim);
+  line-height: 1.6;
+  margin: 0;
+}
+
+.inv-location {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.inv-loc-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sd-text-muted);
+  flex-shrink: 0;
+}
+
+.inv-loc-value {
+  font-family: var(--sd-mono);
+  font-size: 11px;
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: 3px;
+  padding: 1px 6px;
+  color: var(--sd-text-dim);
+}
+
+.inv-verdict {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  font-size: 12px;
+}
+
+.inv-verdict-text {
+  color: var(--sd-text-dim);
+  font-style: italic;
+}
+
+.inv-verify-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.inv-verify-icon {
+  color: var(--sd-green);
+  font-size: 16px;
+  line-height: 1;
+}
+
+.inv-verify-text {
+  font-size: 13px;
+  color: var(--sd-text-dim);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+/* ── Analysis timeline strip ─────────────────────────────────────────────── */
+
+.sd-timeline {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0;
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius);
+  overflow: hidden;
+}
+
+@media (max-width: 640px) {
+  .sd-timeline { grid-template-columns: 1fr 1fr; }
+}
+
+.sd-tl-item {
+  display: flex;
+  flex-direction: column;
+  padding: 18px 16px;
+  border-right: 1px solid var(--sd-border);
+  gap: 10px;
+}
+.sd-tl-item:last-child { border-right: none; }
+
+.sd-tl-connector-wrap {
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.sd-tl-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--sd-accent);
+  flex-shrink: 0;
+}
+
+.sd-tl-line {
+  flex: 1;
+  height: 2px;
+  background: var(--sd-border-2);
+}
+
+.sd-tl-content {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.sd-tl-stage {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  color: var(--sd-accent);
+}
+
+.sd-tl-value {
+  font-size: 32px;
+  font-weight: 800;
+  color: var(--sd-text);
+  line-height: 1.1;
+}
+
+.sd-tl-value--zero {
+  color: var(--sd-green);
+}
+
+.sd-tl-unit {
+  font-size: 12px;
+  color: var(--sd-text-muted);
+  font-weight: 500;
+}
+
+.sd-tl-detail {
+  font-size: 11px;
+  color: var(--sd-text-muted);
+  margin-top: 4px;
+  line-height: 1.45;
+}
+
+/* ── Analyse card wrapper ─────────────────────────────────────────────────── */
+
+.sd-analyse-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius);
+  padding: 20px 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.sd-analyse-top {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.sd-demo-badge {
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--sd-text-muted);
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border-2);
+  border-radius: 3px;
+  padding: 3px 7px;
+}
+
+/* ── Progress pane — phase-grouped layout ────────────────────────────────── */
+
+.sd-progress {
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.sd-progress-phases {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sd-progress-phase-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.sd-progress-phase-label {
+  font-size: 10px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--sd-text-muted);
+  padding-bottom: 2px;
+  border-bottom: 1px solid var(--sd-border);
+  margin-bottom: 2px;
+}
+
+.sd-progress-phase-label--active {
+  color: var(--sd-accent);
+  border-color: rgba(59, 130, 246, 0.3);
+}
+
+/* ── Progress results block ──────────────────────────────────────────────── */
+
+.sd-progress-result-block {
+  border-top: 1px solid var(--sd-border);
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.sd-progress-result-title {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sd-green);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+.sd-progress-results {
+  display: flex;
+  align-items: stretch;
+  flex-wrap: wrap;
+  gap: 0;
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius-sm);
+  overflow: hidden;
+}
+
+.sd-pr-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 12px 16px;
+  gap: 3px;
+  flex: 1;
+  min-width: 100px;
+}
+
+.sd-pr-divider {
+  width: 1px;
+  background: var(--sd-border);
+  align-self: stretch;
+}
+
+.sd-pr-num {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--sd-text);
+  line-height: 1;
+}
+
+.sd-pr-num--alert { color: var(--sd-orange); }
+.sd-pr-num--muted { color: var(--sd-text-muted); }
+.sd-pr-num--zero  { color: var(--sd-green); }
+
+.sd-pr-label {
+  font-size: 11px;
+  color: var(--sd-text-muted);
+  text-align: center;
+  line-height: 1.3;
+}
+
+/* ── Excluded findings (Not Classified as Drift) ─────────────────────────── */
+
+.sd-excluded-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sd-excluded-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius);
+  padding: 14px 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.sd-excluded-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.sd-excluded-id {
+  font-family: var(--sd-mono);
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--sd-text-muted);
+  min-width: 28px;
+}
+
+.sd-excluded-category {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+  padding: 2px 8px;
+  border-radius: 10px;
+  border: 1px solid;
+}
+
+.sd-excluded-category--gap {
+  color: var(--sd-text-muted);
+  background: var(--sd-surface-2);
+  border-color: var(--sd-border-2);
+}
+
+.sd-excluded-category--intentional {
+  color: #93c5fd;
+  background: rgba(59, 130, 246, 0.08);
+  border-color: rgba(59, 130, 246, 0.25);
+}
+
+.sd-excluded-category--artifact {
+  color: var(--sd-text-muted);
+  background: var(--sd-surface-2);
+  border-color: var(--sd-border-2);
+}
+
+.sd-excluded-title {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--sd-text-dim);
+}
+
+.sd-excluded-explanation {
+  font-size: 13px;
+  color: var(--sd-text-muted);
+  line-height: 1.6;
+  margin: 0;
+  padding-left: 38px;
+}
+
+/* ─────────────────────────────────────────────────────────────────────────────
+   SECURITY DRIFT — Auth pages, Profile page, shared buttons, ALIGNED badge
+   Phase 2.2 additions — appended to existing styles.
+───────────────────────────────────────────────────────────────────────────── */
+
+/* ── Auth page layout (Login / Register) ────────────────────────────────── */
+
+.sd-auth-page {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 100vh;
+  padding: 24px 16px;
+}
+
+.sd-auth-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius);
+  padding: 36px 36px 32px;
+  width: 100%;
+  max-width: 400px;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+@media (max-width: 460px) {
+  .sd-auth-card { padding: 28px 20px 24px; }
+}
+
+.sd-auth-brand {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 24px;
+}
+
+.sd-auth-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: var(--sd-text);
+  margin: 0 0 8px;
+  letter-spacing: -0.01em;
+  line-height: 1.2;
+}
+
+.sd-auth-sub {
+  font-size: 13px;
+  color: var(--sd-text-muted);
+  line-height: 1.6;
+  margin: 0 0 24px;
+}
+
+/* ── Shared form controls ────────────────────────────────────────────────── */
+
+.sd-auth-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.sd-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.sd-label {
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--sd-text-muted);
+}
+
+.sd-input {
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border-2);
+  border-radius: var(--sd-radius-sm);
+  color: var(--sd-text);
+  font-family: var(--sd-font);
+  font-size: 14px;
+  padding: 9px 12px;
+  width: 100%;
+  box-sizing: border-box;
+  transition: border-color 0.15s;
+  outline: none;
+}
+
+.sd-input::placeholder {
+  color: var(--sd-text-muted);
+  opacity: 0.6;
+}
+
+.sd-input:focus {
+  border-color: var(--sd-accent);
+}
+
+/* ── Auth footer link ────────────────────────────────────────────────────── */
+
+.sd-auth-footer-link {
+  font-size: 13px;
+  color: var(--sd-text-muted);
+  text-align: center;
+  margin: 0;
+}
+
+/* ── Shared link ─────────────────────────────────────────────────────────── */
+
+.sd-link {
+  color: var(--sd-accent);
+  text-decoration: none;
+}
+.sd-link:hover { text-decoration: underline; }
+
+/* ── Shared button system ────────────────────────────────────────────────── */
+
+/* Primary — same as sd-analyse-btn but reusable */
+.sd-btn-primary {
+  background: var(--sd-accent);
+  color: #fff;
+  border: none;
+  font-family: var(--sd-font);
+  font-size: 14px;
+  font-weight: 600;
+  padding: 10px 20px;
+  border-radius: var(--sd-radius-sm);
+  cursor: pointer;
+  transition: opacity 0.15s;
+  letter-spacing: 0.01em;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+}
+.sd-btn-primary:hover { opacity: 0.88; }
+
+/* Full-width modifier */
+.sd-btn-full {
+  width: 100%;
+  box-sizing: border-box;
+}
+
+/* Secondary — ghost button */
+.sd-btn-secondary {
+  background: none;
+  color: var(--sd-text-dim);
+  border: 1px solid var(--sd-border-2);
+  font-family: var(--sd-font);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 18px;
+  border-radius: var(--sd-radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, color 0.15s;
+  display: inline-block;
+  text-align: center;
+  text-decoration: none;
+}
+.sd-btn-secondary:hover {
+  border-color: var(--sd-accent);
+  color: var(--sd-text);
+}
+
+/* Danger — sign out */
+.sd-btn-danger {
+  background: none;
+  color: var(--sd-red);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  font-family: var(--sd-font);
+  font-size: 13px;
+  font-weight: 500;
+  padding: 9px 18px;
+  border-radius: var(--sd-radius-sm);
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s;
+}
+.sd-btn-danger:hover {
+  border-color: var(--sd-red);
+  background: rgba(248, 113, 113, 0.07);
+}
+
+/* ── ALIGNED badge (replaces FIXED for repo status) ─────────────────────── */
+
+.sd-aligned-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 2px 9px;
+  border-radius: 12px;
+  background: var(--sd-green-bg);
+  color: var(--sd-green);
+  border: 1px solid var(--sd-green-border);
+  white-space: nowrap;
+  line-height: 1.8;
+}
+
+/* ── Compact hero variant (Profile page) ────────────────────────────────── */
+
+.sd-hero--compact {
+  padding: 32px 0 24px;
+  margin-bottom: 28px;
+}
+
+/* ── Profile page ────────────────────────────────────────────────────────── */
+
+.sd-profile-card {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius);
+  padding: 20px 24px;
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+@media (max-width: 480px) {
+  .sd-profile-card {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 14px;
+  }
+}
+
+.sd-profile-avatar {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--sd-surface-2);
+  border: 2px solid var(--sd-border-2);
+  color: var(--sd-accent);
+  font-size: 16px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  letter-spacing: 0.04em;
+}
+
+.sd-profile-fields {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  flex: 1;
+}
+
+.sd-profile-actions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.sd-profile-error {
+  color: var(--sd-red);
+  font-size: 14px;
+  margin-bottom: 12px;
+}
+
+.sd-profile-loading {
+  color: var(--sd-text-muted);
+  font-size: 14px;
+}
+
+/* ── Dashboard nav: active link style ───────────────────────────────────── */
+
+.sd-nav-link--active {
+  color: var(--sd-text);
+  font-weight: 600;
+}
+
+/* ── Responsive: prevent horizontal overflow on narrow screens ───────────── */
+
+@media (max-width: 480px) {
+  .sd-hero-title { font-size: 26px; }
+  .sd-auth-card  { max-width: 100%; }
+  .sd-tl-item    { padding: 14px 12px; }
+  .sd-pr-item    { padding: 10px 10px; min-width: 80px; }
+  .sd-verification-grid { grid-template-columns: 1fr 1fr; }
+  .sd-progress   { min-width: 0; }
+  .sd-analyse-btn { font-size: 13px; }
+  .sd-workflow   { flex-direction: column; gap: 16px; }
+  .sd-workflow-connector { display: none; }
+}
