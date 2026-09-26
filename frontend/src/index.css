@@ -1569,3 +1569,142 @@ button {
 .sd-verify-card--orange .sd-verify-num {
   color: var(--sd-orange);
 }
+
+/* ── Simplified dashboard presentation ──────────────────────────────────── */
+
+.sd-analysis-status {
+  margin: 0;
+  color: var(--sd-text-dim);
+  font-size: 13px;
+}
+
+.sd-result-summary {
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius);
+  padding: 18px 20px;
+  margin-bottom: 18px;
+}
+
+.sd-result-status {
+  margin: 0 0 14px;
+  color: var(--sd-green);
+  font-size: 17px;
+  font-weight: 700;
+}
+
+.sd-result-status--drift { color: var(--sd-orange); }
+
+.sd-result-counts {
+  display: flex;
+  gap: 32px;
+}
+
+.sd-result-count {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  color: var(--sd-text-dim);
+  font-size: 13px;
+}
+
+.sd-result-count strong {
+  color: var(--sd-text);
+  font-size: 20px;
+}
+
+.sd-findings-list { gap: 12px; }
+
+.sd-finding-item {
+  overflow: hidden;
+  padding: 18px 20px;
+  background: var(--sd-surface);
+  border: 1px solid var(--sd-border);
+  border-radius: var(--sd-radius);
+}
+
+.sd-finding-severity { margin-bottom: 9px; }
+
+.sd-finding-title {
+  margin: 0 0 8px;
+  color: var(--sd-text);
+  font-size: 16px;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.sd-finding-explanation {
+  margin: 0 0 10px;
+  color: var(--sd-text-dim);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.sd-finding-location {
+  margin: 0 0 12px;
+  color: var(--sd-text-muted);
+  font-family: var(--sd-mono);
+  font-size: 12px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.sd-finding-item .finding-card {
+  width: 100%;
+  background: transparent;
+  border: 0;
+  border-radius: 0;
+}
+
+.sd-finding-item .finding-header {
+  display: inline-flex;
+  width: auto;
+  padding: 7px 11px;
+  color: var(--sd-accent);
+  background: var(--sd-surface-2);
+  border: 1px solid var(--sd-border-2);
+  border-radius: var(--sd-radius-sm);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.sd-finding-item .finding-header > span {
+  display: none;
+}
+
+.sd-finding-item .finding-header::after {
+  content: "See Details";
+}
+
+.sd-finding-item .finding-card--open .finding-header::after {
+  content: "Hide Details";
+}
+
+.sd-how-title { margin-bottom: 8px; }
+
+.sd-how-flow {
+  margin: 0;
+  color: var(--sd-text);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.sd-how-flow span {
+  padding: 0 8px;
+  color: var(--sd-accent);
+}
+
+@media (max-width: 600px) {
+  .sd-result-counts { flex-direction: column; gap: 8px; }
+
+  .sd-finding-item { padding: 16px; }
+
+  .sd-how-flow span { padding: 0 3px; }
+}
+
+.sd-analyse-path-field .sd-input {
+  min-height: 42px;
+  background: var(--sd-bg);
+  border-color: var(--sd-border-2);
+  font-size: 14px;
+}

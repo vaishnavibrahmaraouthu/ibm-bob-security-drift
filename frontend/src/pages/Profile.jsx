@@ -154,8 +154,10 @@ function Profile() {
               <div className="sd-repo-field">
                 <span className="sd-field-label">State</span>
                 <span className="sd-field-value">
-                  <span className="sd-aligned-badge">ALIGNED</span>
-                  <span className="sd-status-detail">All confirmed drift remediated</span>
+                  <span>ANALYSIS AVAILABLE</span>
+                  <span className="sd-status-detail">
+                    Run Security Drift analysis from the Dashboard to see current findings.
+                  </span>
                 </span>
               </div>
             </div>
