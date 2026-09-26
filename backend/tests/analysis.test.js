@@ -36,7 +36,11 @@ const {
   DETECTOR,
 } = require("../services/driftDetector");
 const { classifyAll, CATEGORY } = require("../services/findingClassifier");
-const { analyzeRepository }     = require("../services/analyzeRepository");
+const {
+  analyzeRepository,
+  SELF_ANALYSIS_EXCLUSIONS,
+  _selfAnalysisExclusions,
+} = require("../services/analyzeRepository");
 
 // ── Fixture helpers ───────────────────────────────────────────────────────────
 
@@ -699,5 +703,201 @@ describe("analyzeRepository — fixture repos", () => {
     expect(result.meta.baselineFile).toBeNull();
     // Analysis still runs; just no document-verified rules
     expect(Array.isArray(result.findings)).toBe(true);
+  });
+});
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Self-analysis guard — false-positive prevention
+// ─────────────────────────────────────────────────────────────────────────────
+
+describe("self-analysis guard — _selfAnalysisExclusions", () => {
+  let tmpDir;
+
+  afterEach(() => {
+    if (tmpDir) { removeTmpRepo(tmpDir); tmpDir = null; }
+  });
+
+  test("returns the full exclusion set when the fingerprint file is present", () => {
+    tmpDir = makeTmpRepo({
+      "backend/services/analyzeRepository.js": "// tool file",
+    });
+    const result = _selfAnalysisExclusions(tmpDir);
+    expect(result).toBe(SELF_ANALYSIS_EXCLUSIONS);
+    expect(result.has("backend/services/driftDetector.js")).toBe(true);
+    expect(result.has("backend/services/findingClassifier.js")).toBe(true);
+    expect(result.has("backend/services/fileScanner.js")).toBe(true);
+    expect(result.has("backend/services/patternParser.js")).toBe(true);
+    expect(result.has("backend/services/analyzeRepository.js")).toBe(true);
+  });
+
+  test("returns an empty set for a repo that is NOT Security Drift", () => {
+    tmpDir = makeTmpRepo({
+      "routes/authRoutes.js": "// some app",
+    });
+    const result = _selfAnalysisExclusions(tmpDir);
+    expect(result.size).toBe(0);
+  });
+});
+
+describe("self-analysis guard — scanRepository with excludeRelPaths", () => {
+  let tmpDir;
+
+  afterEach(() => {
+    if (tmpDir) { removeTmpRepo(tmpDir); tmpDir = null; }
+  });
+
+  test("excludes files listed in excludeRelPaths", () => {
+    tmpDir = makeTmpRepo({
+      "routes/authRoutes.js":              "// application code",
+      "backend/services/driftDetector.js": "// tool code — should be excluded",
+    });
+    const excluded = new Set(["backend/services/driftDetector.js"]);
+    const files = scanRepository(tmpDir, excluded);
+    const relPaths = files.map((f) => f.relativePath.replace(/\\/g, "/"));
+
+    expect(relPaths).toContain("routes/authRoutes.js");
+    expect(relPaths.some((p) => p.includes("driftDetector"))).toBe(false);
+  });
+
+  test("does not exclude files when excludeRelPaths is empty", () => {
+    tmpDir = makeTmpRepo({
+      "routes/authRoutes.js":              "// application code",
+      "backend/services/driftDetector.js": "// tool code",
+    });
+    const files = scanRepository(tmpDir, new Set());
+    const relPaths = files.map((f) => f.relativePath.replace(/\\/g, "/"));
+
+    expect(relPaths).toContain("routes/authRoutes.js");
+    expect(relPaths.some((p) => p.includes("driftDetector"))).toBe(true);
+  });
+});
+
+describe("self-analysis guard — analyzeRepository on the demo repo", () => {
+  const DEMO_REPO = path.resolve(__dirname, "../..");
+
+  test("analysis-engine service files are not in the scanned file list", () => {
+    const result = analyzeRepository(DEMO_REPO);
+    // We don't have direct access to the file list after the fact, so we
+    // verify via findings: none of the findings should point at a services file.
+    const serviceFindings = result.findings.filter((f) =>
+      (f.file || "").replace(/\\/g, "/").includes("backend/services/")
+    );
+    expect(serviceFindings).toHaveLength(0);
+  });
+
+  test("authRoutes.js is still scannable — D-2/D-3/D-4 findings exist from the route file", () => {
+    const result = analyzeRepository(DEMO_REPO);
+    const routeFindings = result.findings.filter((f) =>
+      (f.file || "").replace(/\\/g, "/").includes("routes/authRoutes")
+    );
+    // The route file should still produce findings (D-2, D-3, D-4 confirmed drift)
+    expect(routeFindings.length).toBeGreaterThan(0);
+  });
+
+  test("D-1 finding from authRoutes.js is still classified as INTENTIONAL_DESIGN (intentional comment present)", () => {
+    const result = analyzeRepository(DEMO_REPO);
+    const d1Findings = result.findings.filter(
+      (f) => f.detectorId === "D-1" && (f.file || "").replace(/\\/g, "/").includes("routes/authRoutes")
+    );
+    expect(d1Findings.length).toBeGreaterThanOrEqual(1);
+    expect(d1Findings[0].category).toBe(CATEGORY.INTENTIONAL_DESIGN);
+  });
+
+  test("confirmed drift findings all originate from application code, not analysis-engine files", () => {
+    const result = analyzeRepository(DEMO_REPO);
+    for (const f of result.confirmedDrift) {
+      const normPath = (f.file || "").replace(/\\/g, "/");
+      expect(normPath).not.toMatch(/backend\/services\//);
+    }
+  });
+});
+
+describe("self-analysis guard — fixture with tool-like service code", () => {
+  let tmpDir;
+
+  afterEach(() => {
+    if (tmpDir) { removeTmpRepo(tmpDir); tmpDir = null; }
+  });
+
+  // Simulates what driftDetector.js looks like: contains regex pattern strings
+  // that would otherwise trigger the detectors on themselves.
+  const TOOL_SERVICE_CONTENT = [
+    '"use strict";',
+    "// Detector pattern strings — these are regex source, NOT application code",
+    "const deviationRe = /Math\\.random\\s*\\(\\s*\\)/;",
+    'const disclosingRe = /["\\'  + "'" + ']User not found["\\'  + "'" + ']/i;',
+    "const assignRe = /\\.\\s*resetToken\\s*=\\s*/;",
+    'const responseRe = /res\\.(json|send)\\s*\\(/;',
+  ].join("\n");
+
+  test("tool service files are excluded when fingerprint present; only app routes are scanned", () => {
+    // Repo that looks like Security Drift: has the fingerprint file AND
+    // a services/driftDetector.js (tool code) AND an authRoutes.js (app code).
+    const APP_AUTH = [
+      'const crypto = require("crypto");',
+      'const bcrypt = require("bcryptjs");',
+      'const token = crypto.randomBytes(32).toString("hex");',
+      'await bcrypt.hash(password, 10);',
+      'return res.status(401).json({ message: "Invalid email or password" });',
+      'const jwt = require("jsonwebtoken");',
+      'jwt.sign({ userId }, process.env.JWT_SECRET, { expiresIn: "1h" });',
+    ].join("\n");
+
+    const DEVIANT_ROUTE = [
+      'router.post("/forgot-password", async (req, res) => {',
+      '  const user = await User.findOne({ email });',
+      '  if (!user) return res.status(404).json({ message: "User not found" });',
+      '  const resetToken = Math.random().toString(36).substring(2, 15);',
+      '  user.resetToken = resetToken;',
+      '  res.json({ message: "ok", resetToken });',
+      "});",
+    ].join("\n");
+
+    tmpDir = makeTmpRepo({
+      // Fingerprint: marks this repo as Security Drift itself
+      "backend/services/analyzeRepository.js": "// fingerprint",
+      // Tool infrastructure files — must NOT be scanned
+      "backend/services/driftDetector.js": TOOL_SERVICE_CONTENT,
+      // Application code — MUST be scanned
+      "routes/authRoutes.js": APP_AUTH,
+      "routes/forgotPassword.js": DEVIANT_ROUTE,
+    });
+
+    const result = analyzeRepository(tmpDir);
+
+    // Tool service file must not appear in any finding
+    const toolFindings = result.findings.filter((f) =>
+      (f.file || "").replace(/\\/g, "/").includes("backend/services/")
+    );
+    expect(toolFindings).toHaveLength(0);
+
+    // Application drift should still be detected from the route files
+    const d3 = result.findings.filter((f) => f.detectorId === "D-3");
+    expect(d3.length).toBeGreaterThanOrEqual(1);
+    expect((d3[0].file || "").replace(/\\/g, "/")).toContain("routes/");
+  });
+
+  test("without the fingerprint the services/ files ARE scanned (normal repo behaviour)", () => {
+    // Same layout but NO fingerprint — this is any other repo with a services/ dir
+    const APP_AUTH = [
+      'const crypto = require("crypto");',
+      'await bcrypt.hash(password, 10);',
+      'return res.status(401).json({ message: "Invalid email or password" });',
+    ].join("\n");
+
+    tmpDir = makeTmpRepo({
+      // No fingerprint file
+      "routes/authRoutes.js": APP_AUTH,
+      "services/tokenHelper.js": [
+        "// token helpers with reset token logic",
+        "forgot-password flow",
+        'const user = await User.findOne({ email });',
+        'if (!user) return res.status(404).json({ message: "User not found" });',
+      ].join("\n"),
+    });
+
+    const files = scanRepository(tmpDir, new Set());
+    const relPaths = files.map((f) => f.relativePath.replace(/\\/g, "/"));
+    expect(relPaths.some((p) => p.includes("services/tokenHelper"))).toBe(true);
   });
 });

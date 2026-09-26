@@ -30,6 +30,48 @@ const { scanRepository, isTestFile }          = require("./fileScanner");
 const { runDetectors }                        = require("./driftDetector");
 const { classifyAll, CATEGORY }               = require("./findingClassifier");
 
+// ── Self-analysis guard ───────────────────────────────────────────────────────
+//
+// When Security Drift analyses its own repository the detector/classifier
+// source files (backend/services/*.js) contain pattern strings — regex
+// literals, example strings, etc. — that match the detectors' own rules.
+// This produces false positives: driftDetector.js "looks like" it contains
+// Math.random(), resetToken responses, etc., because those strings appear
+// inside the detector code itself.
+//
+// The guard works by fingerprinting: if the analysed repo contains the file
+// backend/services/analyzeRepository.js (i.e. it is this very tool), the
+// five analysis-infrastructure files are excluded from scanning.
+//
+// This exclusion is SPECIFIC — it applies only to these five named files when
+// the fingerprint is found.  It does NOT exclude the `services` directory in
+// general, does NOT affect any other repository, and leaves all application
+// code (routes, models, middleware) fully scannable.
+
+/** Relative paths of the analysis-engine files that must not scan themselves. */
+const SELF_ANALYSIS_EXCLUSIONS = new Set([
+  "backend/services/analyzeRepository.js",
+  "backend/services/driftDetector.js",
+  "backend/services/findingClassifier.js",
+  "backend/services/fileScanner.js",
+  "backend/services/patternParser.js",
+]);
+
+/**
+ * Return the exclusion set when the target repo is Security Drift itself,
+ * or an empty Set for any other repository.
+ *
+ * @param {string} resolvedRepoPath
+ * @returns {Set<string>}
+ */
+function _selfAnalysisExclusions(resolvedRepoPath) {
+  const fingerprint = path.join(resolvedRepoPath, "backend", "services", "analyzeRepository.js");
+  if (fs.existsSync(fingerprint)) {
+    return SELF_ANALYSIS_EXCLUSIONS;
+  }
+  return new Set();
+}
+
 /**
  * @typedef {import('./findingClassifier').AnalysisResult} AnalysisResult
  */
@@ -60,7 +102,8 @@ function analyzeRepository(repoPath) {
   const baselineSections = hasBaseline ? parsedPatterns.sections : [];
 
   // ── 3. Enumerate source files ──────────────────────────────────────────
-  const files = scanRepository(resolved);
+  const excludeRelPaths = _selfAnalysisExclusions(resolved);
+  const files = scanRepository(resolved, excludeRelPaths);
 
   // ── 4. Run detectors ───────────────────────────────────────────────────
   const candidates = runDetectors(files, isTestFile);
@@ -84,4 +127,4 @@ function analyzeRepository(repoPath) {
   return result;
 }
 
-module.exports = { analyzeRepository, CATEGORY };
+module.exports = { analyzeRepository, CATEGORY, SELF_ANALYSIS_EXCLUSIONS, _selfAnalysisExclusions };

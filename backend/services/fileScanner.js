@@ -60,11 +60,14 @@ const SECURITY_RELEVANT_NAME_FRAGMENTS = ["auth", "password", "token", "jwt", "s
  * directories) are included but tagged so callers can distinguish them.
  *
  * @param {string} repoPath - Root of the repository to scan.
+ * @param {Set<string>} [excludeRelPaths] - Optional set of normalised relative
+ *   paths (forward-slash separated) to skip.  Used by analyzeRepository to
+ *   exclude the tool's own analysis-infrastructure files when scanning itself.
  * @returns {ScannedFile[]}
  */
-function scanRepository(repoPath) {
+function scanRepository(repoPath, excludeRelPaths) {
   const results = [];
-  _walk(repoPath, repoPath, results);
+  _walk(repoPath, repoPath, results, excludeRelPaths || new Set());
   return results;
 }
 
@@ -74,8 +77,9 @@ function scanRepository(repoPath) {
  * @param {string} repoRoot
  * @param {string} dir
  * @param {ScannedFile[]} results
+ * @param {Set<string>} excludeRelPaths
  */
-function _walk(repoRoot, dir, results) {
+function _walk(repoRoot, dir, results, excludeRelPaths) {
   let entries;
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -86,11 +90,14 @@ function _walk(repoRoot, dir, results) {
   for (const entry of entries) {
     const fullPath = path.join(dir, entry.name);
     const relPath  = path.relative(repoRoot, fullPath);
+    // Normalise to forward slashes for cross-platform comparison.
+    const relNorm  = relPath.replace(/\\/g, "/");
 
     if (entry.isDirectory()) {
       if (EXCLUDED_DIRS.has(entry.name)) continue;
-      _walk(repoRoot, fullPath, results);
+      _walk(repoRoot, fullPath, results, excludeRelPaths);
     } else if (entry.isFile()) {
+      if (excludeRelPaths.has(relNorm)) continue;
       if (!_isSourceFile(entry.name)) continue;
       if (!_isRelevant(relPath, entry.name)) continue;
       _readFile(fullPath, relPath, results);
